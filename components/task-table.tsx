@@ -2,6 +2,8 @@
 
 import * as React from 'react'
 import {
+  ArrowDown,
+  ArrowUp,
   ChevronRight,
   CircleDot,
   MoreHorizontal,
@@ -45,6 +47,7 @@ interface TaskTableProps {
   onToggleDone: (task: Task) => void
   onEdit: (task: Task) => void
   onAddSubtask: (parent: Task) => void
+  onMove: (task: Task, direction: 'up' | 'down') => void
   onDelete: (task: Task) => void
 }
 
@@ -55,10 +58,9 @@ export function TaskTable({
   onToggleDone,
   onEdit,
   onAddSubtask,
+  onMove,
   onDelete,
 }: TaskTableProps) {
-  // Empieza vacío:
-  // al cargar/recargar ninguna tarea principal aparece expandida.
   const [expanded, setExpanded] = React.useState<Set<string>>(
     () => new Set()
   )
@@ -89,14 +91,16 @@ export function TaskTable({
     })
   }
 
-  // Si se elimina una tarea que estaba expandida,
-  // limpiamos su ID del estado.
   React.useEffect(() => {
-    const existingParentIds = new Set(parents.map((parent) => parent.id))
+    const expandableIds = new Set(
+      tasks
+        .filter((task) => tasks.some((child) => child.parentId === task.id))
+        .map((task) => task.id)
+    )
 
     setExpanded((prev) => {
       const next = new Set(
-        [...prev].filter((id) => existingParentIds.has(id))
+        [...prev].filter((id) => expandableIds.has(id))
       )
 
       if (next.size === prev.size) {
@@ -107,12 +111,52 @@ export function TaskTable({
     })
   }, [tasks]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Mostrar el padre cuando coincide él o alguna de sus subtareas.
-  const visibleParents = parents.filter(
-    (parent) =>
-      matches(parent.id) ||
-      childrenOf(parent.id).some((child) => matches(child.id))
-  )
+  function branchMatches(task: Task): boolean {
+    return matches(task.id) || childrenOf(task.id).some(branchMatches)
+  }
+
+  const visibleParents = parents.filter(branchMatches)
+
+  function renderTask(
+    task: Task,
+    depth: number,
+    ancestorMatches: boolean
+  ): React.ReactNode {
+    const kids = childrenOf(task.id)
+    const isExpanded = expanded.has(task.id)
+    const showWholeBranch = ancestorMatches || matches(task.id)
+    const visibleKids = kids.filter(
+      (child) => showWholeBranch || branchMatches(child)
+    )
+    const siblings = tasks.filter((item) => item.parentId === task.parentId)
+    const siblingIndex = siblings.findIndex((item) => item.id === task.id)
+
+    return (
+      <React.Fragment key={task.id}>
+        <TaskRow
+          task={task}
+          people={people}
+          depth={depth}
+          hasChildren={kids.length > 0}
+          isCollapsed={!isExpanded}
+          progress={kids.length > 0 ? subtaskProgress(tasks, task.id) : null}
+          canMoveUp={siblingIndex > 0}
+          canMoveDown={siblingIndex < siblings.length - 1}
+          onToggleCollapse={() => toggleExpanded(task.id)}
+          onToggleDone={onToggleDone}
+          onEdit={onEdit}
+          onAddSubtask={onAddSubtask}
+          onMove={onMove}
+          onDelete={onDelete}
+        />
+
+        {isExpanded &&
+          visibleKids.map((child) =>
+            renderTask(child, depth + 1, showWholeBranch)
+          )}
+      </React.Fragment>
+    )
+  }
 
   if (visibleParents.length === 0) {
     return (
@@ -165,64 +209,7 @@ export function TaskTable({
         </TableHeader>
 
         <TableBody>
-          {visibleParents.map((parent) => {
-            const kids = childrenOf(parent.id)
-            const isExpanded = expanded.has(parent.id)
-
-            const prog = subtaskProgress(
-              tasks,
-              parent.id
-            )
-
-            const visibleKids = kids.filter(
-              (child) =>
-                matches(child.id) ||
-                matches(parent.id)
-            )
-
-            return (
-              <React.Fragment key={parent.id}>
-                {/* TAREA PRINCIPAL */}
-                <TaskRow
-                  task={parent}
-                  people={people}
-                  depth={0}
-                  hasChildren={kids.length > 0}
-                  isCollapsed={!isExpanded}
-                  progress={
-                    kids.length > 0 ? prog : null
-                  }
-                  onToggleCollapse={() =>
-                    toggleExpanded(parent.id)
-                  }
-                  onToggleDone={onToggleDone}
-                  onEdit={onEdit}
-                  onAddSubtask={onAddSubtask}
-                  onDelete={onDelete}
-                />
-
-                {/* SUBTAREAS:
-                    solo se renderizan cuando el padre está expandido */}
-                {isExpanded &&
-                  visibleKids.map((child) => (
-                    <TaskRow
-                      key={child.id}
-                      task={child}
-                      people={people}
-                      depth={1}
-                      hasChildren={false}
-                      isCollapsed={true}
-                      progress={null}
-                      onToggleCollapse={() => {}}
-                      onToggleDone={onToggleDone}
-                      onEdit={onEdit}
-                      onAddSubtask={onAddSubtask}
-                      onDelete={onDelete}
-                    />
-                  ))}
-              </React.Fragment>
-            )
-          })}
+          {visibleParents.map((parent) => renderTask(parent, 0, false))}
         </TableBody>
       </Table>
     </div>
@@ -236,10 +223,13 @@ function TaskRow({
   hasChildren,
   isCollapsed,
   progress,
+  canMoveUp,
+  canMoveDown,
   onToggleCollapse,
   onToggleDone,
   onEdit,
   onAddSubtask,
+  onMove,
   onDelete,
 }: {
   task: Task
@@ -252,10 +242,13 @@ function TaskRow({
     total: number
     percent: number
   } | null
+  canMoveUp: boolean
+  canMoveDown: boolean
   onToggleCollapse: () => void
   onToggleDone: (task: Task) => void
   onEdit: (task: Task) => void
   onAddSubtask: (parent: Task) => void
+  onMove: (task: Task, direction: 'up' | 'down') => void
   onDelete: (task: Task) => void
 }) {
   const person = findPerson(
@@ -269,8 +262,21 @@ function TaskRow({
   return (
     <TableRow
       className={cn(
-        depth === 0 && 'bg-muted/30'
+        depth === 0 && 'bg-muted/30',
+        hasChildren && 'cursor-pointer'
       )}
+      onClick={(event) => {
+        if (!hasChildren) return
+        const target = event.target as HTMLElement
+        if (
+          target.closest(
+            'button, a, input, [role="checkbox"], [role="menuitem"]'
+          )
+        ) {
+          return
+        }
+        onToggleCollapse()
+      }}
     >
       <TableCell>
         <div
@@ -431,16 +437,26 @@ function TaskRow({
               Editar
             </DropdownMenuItem>
 
-            {depth === 0 && (
-              <DropdownMenuItem
-                onClick={() =>
-                  onAddSubtask(task)
-                }
-              >
-                <Plus className="size-4" />
-                Añadir subtarea
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem onClick={() => onAddSubtask(task)}>
+              <Plus className="size-4" />
+              Añadir subtarea
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              disabled={!canMoveUp}
+              onClick={() => onMove(task, 'up')}
+            >
+              <ArrowUp className="size-4" />
+              Mover hacia arriba
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              disabled={!canMoveDown}
+              onClick={() => onMove(task, 'down')}
+            >
+              <ArrowDown className="size-4" />
+              Mover hacia abajo
+            </DropdownMenuItem>
 
             <DropdownMenuSeparator />
 

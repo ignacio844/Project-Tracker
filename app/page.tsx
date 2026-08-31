@@ -35,7 +35,6 @@ export default function Page() {
   const [people, setPeople] = React.useState<Person[]>([])
   const [hydrated, setHydrated] = React.useState(false)
 
-  const [query, setQuery] = React.useState('')
   const [statusFilter, setStatusFilter] = React.useState<StatusFilter>('all')
   const [assigneeFilter, setAssigneeFilter] =
     React.useState<AssigneeFilter>('all')
@@ -83,28 +82,42 @@ export default function Page() {
 
   const kpis = React.useMemo(() => computeKpis(tasks), [tasks])
 
-  const hasFilters =
-    query.trim() !== '' || statusFilter !== 'all' || assigneeFilter !== 'all'
+  const hasFilters = statusFilter !== 'all' || assigneeFilter !== 'all'
 
   // Conjunto de tareas que cumplen los filtros. null = sin filtros.
   const matchIds = React.useMemo(() => {
     if (!hasFilters) return null
-    const q = query.trim().toLowerCase()
     const set = new Set<string>()
     for (const t of tasks) {
-      const matchQuery = q === '' || t.title.toLowerCase().includes(q)
       const matchStatus = statusFilter === 'all' || t.status === statusFilter
       const matchAssignee =
         assigneeFilter === 'all' || t.assigneeId === assigneeFilter
-      if (matchQuery && matchStatus && matchAssignee) set.add(t.id)
+      if (matchStatus && matchAssignee) set.add(t.id)
     }
     return set
-  }, [tasks, query, statusFilter, assigneeFilter, hasFilters])
+  }, [tasks, statusFilter, assigneeFilter, hasFilters])
 
-  const parents = React.useMemo(
-    () => tasks.filter((t) => t.parentId === null),
-    [tasks]
-  )
+  const parentOptions = React.useMemo(() => {
+    if (!editingTask) return tasks
+
+    const excluded = new Set([editingTask.id])
+    let changed = true
+    while (changed) {
+      changed = false
+      for (const task of tasks) {
+        if (
+          task.parentId &&
+          excluded.has(task.parentId) &&
+          !excluded.has(task.id)
+        ) {
+          excluded.add(task.id)
+          changed = true
+        }
+      }
+    }
+
+    return tasks.filter((task) => !excluded.has(task.id))
+  }, [tasks, editingTask])
 
   function openNewTask() {
     setEditingTask(null)
@@ -157,24 +170,66 @@ export default function Page() {
     )
   }
 
+  function handleMove(task: Task, direction: 'up' | 'down') {
+    setTasks((prev) => {
+      const siblings = prev.filter((item) => item.parentId === task.parentId)
+      const siblingIndex = siblings.findIndex((item) => item.id === task.id)
+      const other = siblings[siblingIndex + (direction === 'up' ? -1 : 1)]
+      if (!other) return prev
+
+      const taskIndex = prev.findIndex((item) => item.id === task.id)
+      const otherIndex = prev.findIndex((item) => item.id === other.id)
+      const next = [...prev]
+      ;[next[taskIndex], next[otherIndex]] = [next[otherIndex], next[taskIndex]]
+      return next
+    })
+  }
+
   function confirmDelete() {
     if (!deleteTarget) return
     const target = deleteTarget
-    setTasks((prev) =>
-      prev.filter((t) => t.id !== target.id && t.parentId !== target.id)
-    )
+    setTasks((prev) => {
+      const removed = new Set([target.id])
+      let changed = true
+      while (changed) {
+        changed = false
+        for (const task of prev) {
+          if (
+            task.parentId &&
+            removed.has(task.parentId) &&
+            !removed.has(task.id)
+          ) {
+            removed.add(task.id)
+            changed = true
+          }
+        }
+      }
+      return prev.filter((task) => !removed.has(task.id))
+    })
     setDeleteTarget(null)
   }
 
   function clearFilters() {
-    setQuery('')
     setStatusFilter('all')
     setAssigneeFilter('all')
   }
 
-  const deleteChildCount = deleteTarget
-    ? tasks.filter((t) => t.parentId === deleteTarget.id).length
-    : 0
+  const deleteChildCount = React.useMemo(() => {
+    if (!deleteTarget) return 0
+    const descendants = new Set<string>()
+    let parentIds = new Set([deleteTarget.id])
+    while (parentIds.size > 0) {
+      const nextParentIds = new Set<string>()
+      for (const task of tasks) {
+        if (task.parentId && parentIds.has(task.parentId)) {
+          descendants.add(task.id)
+          nextParentIds.add(task.id)
+        }
+      }
+      parentIds = nextParentIds
+    }
+    return descendants.size
+  }, [tasks, deleteTarget])
 
   return (
     <div className="workspace-shell min-h-screen">
@@ -206,8 +261,6 @@ export default function Page() {
               </p>
             </div>
             <TaskToolbar
-              query={query}
-              onQueryChange={setQuery}
               status={statusFilter}
               onStatusChange={setStatusFilter}
               assignee={assigneeFilter}
@@ -224,6 +277,7 @@ export default function Page() {
             onToggleDone={handleToggleDone}
             onEdit={openEdit}
             onAddSubtask={openAddSubtask}
+            onMove={handleMove}
             onDelete={setDeleteTarget}
           />
         </section>
@@ -234,7 +288,7 @@ export default function Page() {
         onOpenChange={setFormOpen}
         onSubmit={handleSubmit}
         people={people}
-        parents={parents.filter((p) => p.id !== editingTask?.id)}
+        parents={parentOptions}
         initial={editingTask}
         lockedParentId={lockedParentId}
       />

@@ -55,7 +55,7 @@ export function TaskFormDialog({
   onOpenChange: (open: boolean) => void
   onSubmit: (draft: TaskDraft) => void
   people: Person[]
-  /** Posibles tareas padre (solo tareas de nivel superior). */
+  /** Posibles tareas padre; no incluye la tarea editada ni sus descendientes. */
   parents: Task[]
   initial?: Task | null
   /** Si se define, la tarea será subtarea de este id y el campo queda fijo. */

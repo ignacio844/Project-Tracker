@@ -1,7 +1,6 @@
 'use client'
 
-import { Search, X } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -23,8 +22,6 @@ export type AssigneeFilter = string | 'all'
 const ALL = 'all'
 
 export function TaskToolbar({
-  query,
-  onQueryChange,
   status,
   onStatusChange,
   assignee,
@@ -33,8 +30,6 @@ export function TaskToolbar({
   hasFilters,
   onClear,
 }: {
-  query: string
-  onQueryChange: (v: string) => void
   status: StatusFilter
   onStatusChange: (v: StatusFilter) => void
   assignee: AssigneeFilter
@@ -53,18 +48,7 @@ export function TaskToolbar({
   }
 
   return (
-    <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,1fr)_10.5rem_10.5rem_auto] lg:items-center">
-      <div className="relative flex-1">
-        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Buscar tareas..."
-          className="h-9 rounded-md border-border bg-background pl-8 font-mono text-xs"
-          aria-label="Buscar tareas"
-        />
-      </div>
-
+    <div className="grid min-w-0 gap-2 sm:grid-cols-[10.5rem_10.5rem_auto] sm:justify-end sm:items-center">
       <Select
         items={statusItems}
         value={status}
