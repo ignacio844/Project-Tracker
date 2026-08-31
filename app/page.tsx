@@ -23,7 +23,6 @@ import {
   TaskFormDialog,
   type TaskDraft,
 } from '@/components/task-form-dialog'
-import { INITIAL_TASKS, PEOPLE } from '@/lib/data'
 import { computeKpis, createId } from '@/lib/project-utils'
 import {
   loadProjectSnapshot,
@@ -32,8 +31,8 @@ import {
 import type { Person, Task } from '@/lib/types'
 
 export default function Page() {
-  const [tasks, setTasks] = React.useState<Task[]>(INITIAL_TASKS)
-  const [people, setPeople] = React.useState<Person[]>(PEOPLE)
+  const [tasks, setTasks] = React.useState<Task[]>([])
+  const [people, setPeople] = React.useState<Person[]>([])
   const [hydrated, setHydrated] = React.useState(false)
 
   const [query, setQuery] = React.useState('')
@@ -50,19 +49,36 @@ export default function Page() {
   const [deleteTarget, setDeleteTarget] = React.useState<Task | null>(null)
 
   React.useEffect(() => {
-    const saved = loadProjectSnapshot()
-    if (saved) {
-      setTasks(saved.tasks)
-      setPeople(saved.people)
+    let active = true
+
+    void loadProjectSnapshot()
+      .then((saved) => {
+        if (!active) return
+        if (saved) {
+          setTasks(saved.tasks)
+          setPeople(saved.people)
+        }
+        setHydrated(true)
+      })
+      .catch(() => {
+        if (!active) return
+        toast.error(
+          'No se pudieron cargar los datos de Supabase. No se sobrescribirá el proyecto.'
+        )
+      })
+
+    return () => {
+      active = false
     }
-    setHydrated(true)
   }, [])
 
   React.useEffect(() => {
     if (!hydrated) return
-    if (!saveProjectSnapshot(tasks, people)) {
-      toast.error('No se pudo guardar el progreso en este navegador.')
-    }
+    void saveProjectSnapshot(tasks, people).then((saved) => {
+      if (!saved) {
+        toast.error('No se pudo sincronizar el progreso con Supabase.')
+      }
+    })
   }, [tasks, people, hydrated])
 
   const kpis = React.useMemo(() => computeKpis(tasks), [tasks])
