@@ -137,6 +137,7 @@ export function TaskTable({
           task={task}
           people={people}
           depth={depth}
+          isRevealed={depth > 0}
           hasChildren={kids.length > 0}
           isCollapsed={!isExpanded}
           progress={kids.length > 0 ? subtaskProgress(tasks, task.id) : null}
@@ -220,6 +221,7 @@ function TaskRow({
   task,
   people,
   depth,
+  isRevealed,
   hasChildren,
   isCollapsed,
   progress,
@@ -235,6 +237,7 @@ function TaskRow({
   task: Task
   people: Person[]
   depth: number
+  isRevealed: boolean
   hasChildren: boolean
   isCollapsed: boolean
   progress: {
@@ -263,7 +266,8 @@ function TaskRow({
     <TableRow
       className={cn(
         depth === 0 && 'bg-muted/30',
-        hasChildren && 'cursor-pointer'
+        hasChildren && 'cursor-pointer',
+        isRevealed && 'task-row-expand'
       )}
       onClick={(event) => {
         if (!hasChildren) return
