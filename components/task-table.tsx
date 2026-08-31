@@ -457,5 +457,5 @@ function TaskRow({
         </DropdownMenu>
       </TableCell>
     </TableRow>
-  )
+  ) 
 }
