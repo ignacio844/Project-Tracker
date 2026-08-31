@@ -239,14 +239,17 @@ export default function Page() {
           <Button
             variant="outline"
             onClick={() => setPeopleOpen(true)}
-            className="h-9 rounded-md px-3"
+            className="tracker-action-button fx-13 h-9 rounded-md px-3"
           >
             <UsersRound className="size-4" />
-            Participantes
+            <span className="btn-label">Participantes</span>
           </Button>
-          <Button onClick={openNewTask} className="h-9 rounded-md px-3">
+          <Button
+            onClick={openNewTask}
+            className="tracker-action-button fx-13 h-9 rounded-md px-3"
+          >
             <Plus className="size-4" />
-            Nueva tarea
+            <span className="btn-label">Nueva tarea</span>
           </Button>
         </div>
 

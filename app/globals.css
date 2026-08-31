@@ -394,3 +394,32 @@
   position: relative;
   z-index: 1;
 }
+
+/* Shadow Grow: acción principal de la cabecera. */
+.tracker-action-button.fx-13 {
+  --bink: currentColor;
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tracker-action-button .btn-label,
+.tracker-action-button > svg {
+  position: relative;
+  z-index: 2;
+}
+
+.tracker-action-button .btn-label {
+  display: inline-block;
+  transition: inherit;
+}
+
+.tracker-action-button.fx-13::before {
+  display: none;
+}
+
+.tracker-action-button.fx-13:hover {
+  box-shadow: 0 12px 24px -8px color-mix(in srgb, var(--bink) 45%, transparent);
+  transform: translateY(-2px);
+}
