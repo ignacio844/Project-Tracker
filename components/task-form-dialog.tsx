@@ -71,12 +71,14 @@ export function TaskFormDialog({
 
   React.useEffect(() => {
     if (!open) return
+
     setError('')
     setTitle(initial?.title ?? '')
     setStatus(initial?.status ?? 'todo')
     setPriority(initial?.priority ?? 'medium')
     setAssigneeId(initial?.assigneeId ?? NONE)
     setDueDate(initial?.dueDate ?? '')
+
     if (lockedParentId !== undefined && lockedParentId !== null) {
       setParentId(lockedParentId)
     } else {
@@ -85,13 +87,21 @@ export function TaskFormDialog({
   }, [open, initial, lockedParentId])
 
   const statusItems = React.useMemo(
-    () => Object.fromEntries(STATUS_ORDER.map((s) => [s, STATUS_LABELS[s]])),
+    () =>
+      Object.fromEntries(
+        STATUS_ORDER.map((s) => [s, STATUS_LABELS[s]])
+      ),
     []
   )
+
   const priorityItems = React.useMemo(
-    () => Object.fromEntries(PRIORITY_ORDER.map((p) => [p, PRIORITY_LABELS[p]])),
+    () =>
+      Object.fromEntries(
+        PRIORITY_ORDER.map((p) => [p, PRIORITY_LABELS[p]])
+      ),
     []
   )
+
   const assigneeItems = React.useMemo(
     () => ({
       [NONE]: 'Sin asignar',
@@ -99,6 +109,7 @@ export function TaskFormDialog({
     }),
     [people]
   )
+
   const parentItems = React.useMemo(
     () => ({
       [NONE]: 'Sin tarea padre (nivel superior)',
@@ -108,15 +119,19 @@ export function TaskFormDialog({
   )
 
   const isSubtask = parentId !== NONE
-  const isLocked = lockedParentId !== undefined && lockedParentId !== null
+  const isLocked =
+    lockedParentId !== undefined && lockedParentId !== null
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
     const trimmed = title.trim()
+
     if (!trimmed) {
       setError('El título es obligatorio.')
       return
     }
+
     onSubmit({
       id: initial?.id,
       parentId: parentId === NONE ? null : parentId,
@@ -126,13 +141,17 @@ export function TaskFormDialog({
       assigneeId: assigneeId === NONE ? null : assigneeId,
       dueDate: dueDate || null,
     })
+
     onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={handleSubmit}
+          autoComplete="off"
+        >
           <DialogHeader>
             <DialogTitle>
               {initial
@@ -141,6 +160,7 @@ export function TaskFormDialog({
                   ? 'Nueva subtarea'
                   : 'Nueva tarea'}
             </DialogTitle>
+
             <DialogDescription>
               Completa los detalles del elemento de seguimiento.
             </DialogDescription>
@@ -149,39 +169,57 @@ export function TaskFormDialog({
           <div className="flex flex-col gap-4 py-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="task-title">Título</Label>
+
               <Input
                 id="task-title"
+                name="new-task-title"
                 value={title}
                 autoFocus
+                autoComplete="new-password"
                 placeholder="Ej. Diseñar pantalla de inicio de sesión"
                 onChange={(e) => {
                   setTitle(e.target.value)
-                  if (error) setError('')
+
+                  if (error) {
+                    setError('')
+                  }
                 }}
                 aria-invalid={!!error}
               />
+
               {error && (
-                <p className="text-xs text-destructive">{error}</p>
+                <p className="text-xs text-destructive">
+                  {error}
+                </p>
               )}
             </div>
 
             {!isLocked && (
               <div className="flex flex-col gap-2">
                 <Label>Tarea padre</Label>
+
                 <Select
                   items={parentItems}
                   value={parentId}
-                  onValueChange={(v) => setParentId(v as string)}
+                  onValueChange={(v) =>
+                    setParentId(v as string)
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
+
                   <SelectContent>
-                    {Object.entries(parentItems).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
+                    {Object.entries(parentItems).map(
+                      ([value, label]) => (
+                        <SelectItem
+                          key={value}
+                          value={value}
+                        >
+                          {label}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -190,14 +228,18 @@ export function TaskFormDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>Estado</Label>
+
                 <Select
                   items={statusItems}
                   value={status}
-                  onValueChange={(v) => setStatus(v as TaskStatus)}
+                  onValueChange={(v) =>
+                    setStatus(v as TaskStatus)
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
+
                   <SelectContent>
                     {STATUS_ORDER.map((s) => (
                       <SelectItem key={s} value={s}>
@@ -210,14 +252,18 @@ export function TaskFormDialog({
 
               <div className="flex flex-col gap-2">
                 <Label>Prioridad</Label>
+
                 <Select
                   items={priorityItems}
                   value={priority}
-                  onValueChange={(v) => setPriority(v as TaskPriority)}
+                  onValueChange={(v) =>
+                    setPriority(v as TaskPriority)
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
+
                   <SelectContent>
                     {PRIORITY_ORDER.map((p) => (
                       <SelectItem key={p} value={p}>
@@ -232,18 +278,28 @@ export function TaskFormDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>Responsable</Label>
+
                 <Select
                   items={assigneeItems}
                   value={assigneeId}
-                  onValueChange={(v) => setAssigneeId(v as string)}
+                  onValueChange={(v) =>
+                    setAssigneeId(v as string)
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
                   </SelectTrigger>
+
                   <SelectContent>
-                    <SelectItem value={NONE}>Sin asignar</SelectItem>
+                    <SelectItem value={NONE}>
+                      Sin asignar
+                    </SelectItem>
+
                     {people.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
+                      <SelectItem
+                        key={p.id}
+                        value={p.id}
+                      >
                         {p.name}
                       </SelectItem>
                     ))}
@@ -252,12 +308,19 @@ export function TaskFormDialog({
               </div>
 
               <div className="flex flex-col gap-2">
-                <Label htmlFor="task-due">Fecha límite</Label>
+                <Label htmlFor="task-due">
+                  Fecha límite
+                </Label>
+
                 <Input
                   id="task-due"
+                  name="task-due-date"
                   type="date"
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
+                  autoComplete="off"
+                  onChange={(e) =>
+                    setDueDate(e.target.value)
+                  }
                 />
               </div>
             </div>
@@ -271,8 +334,11 @@ export function TaskFormDialog({
             >
               Cancelar
             </Button>
+
             <Button type="submit">
-              {initial ? 'Guardar cambios' : 'Crear tarea'}
+              {initial
+                ? 'Guardar cambios'
+                : 'Crear tarea'}
             </Button>
           </DialogFooter>
         </form>

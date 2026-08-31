@@ -10,6 +10,9 @@ create table if not exists public.project_snapshots (
 
 alter table public.project_snapshots enable row level security;
 
+-- Required when "Automatically expose new tables" is disabled in Supabase.
+grant select, insert, update on table public.project_snapshots to anon;
+
 drop policy if exists "Read shared project tracker" on public.project_snapshots;
 create policy "Read shared project tracker"
   on public.project_snapshots for select to anon using (id = 'project-tracker');
