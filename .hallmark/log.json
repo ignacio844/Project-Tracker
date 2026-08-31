@@ -1,0 +1,16 @@
+[
+  {
+    "date": "2026-08-31",
+    "macrostructure": "Workbench",
+    "theme": "Cobalt",
+    "enrichment": "none",
+    "brief": "Simplified task-first dashboard without header or KPI summary"
+  },
+  {
+    "date": "2026-08-31",
+    "macrostructure": "Workbench",
+    "theme": "Cobalt",
+    "enrichment": "none",
+    "brief": "Technical-modern redesign of the project tracker dashboard"
+  }
+]

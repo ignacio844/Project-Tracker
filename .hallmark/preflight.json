@@ -1,0 +1,8 @@
+{
+  "date": "2026-08-31",
+  "fontStack": "Geist Sans + Geist Mono via next/font",
+  "palette": "OKLCH custom properties with shadcn semantic aliases",
+  "motion": "motion-cut; no dedicated motion library",
+  "spacing": "Tailwind v4 defaults; Hallmark adds a named 4-point scale",
+  "framework": "Next.js 16 app router + React 19 + Tailwind v4"
+}
