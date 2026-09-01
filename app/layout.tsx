@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Rastreador de Proyectos | Seguimiento de tareas y KPIs',
+  title: 'Project Tracker AfterMarket',
   description:
     'Panel de seguimiento de proyectos con KPIs, tabla de tareas y subtareas jerárquicas, y personas asignadas.',
   generator: 'v0.app',
